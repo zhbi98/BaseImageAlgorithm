@@ -1,142 +1,166 @@
+# BaseImageAlgorithm
 
-# **Image processing**
- 
-![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg) 
-[![Build Status](https://travis-ci.com/zhbi98/image.svg?branch=master)](https://travis-ci.com/zhbi98/image)
+这里主要实现常见的图像处理，如鱼眼校正、高斯模糊、透明度、饱和度锐化、灰色填充、任意角度旋转等。这些算法是通过 Python 从底层实现的，每个算法的实现过程如下详细描述。
 
-**Here mainly realizes the common image processing such as fisheye correction, Gaussian blur, transparency, saturation sharpening, gray filling, arbitrary angle rotation and so on. These algorithms are implemented from the bottom through Python, and the implementation process of each algorithm is described in detail below**
+## 1. 透明度
 
-## _Ⅰ. Alpha_
+图像由一系列像素组成，图像的原始颜色通过像素发光显示。图像每个像素的颜色由标准颜色 R、G 和 B 组成。因此，当图像经过算法处理时，实际上是对图像像素的 RGB 值进行重新计算和重组的过程。
 
-The image is made up of a series of pixels, and the original colors of the image are displayed by the pixels emitting light.The color of each pixel of the image is composed of standard colors R, G and B.So when the image is processed by the algorithm, the RGB value of the pixel of the image is actually recalculated A process of recombination of calculations.
+通过算法处理图像的透明度时，实际上是在原图像上通过算法覆盖一层彩色遮罩。遮罩的颜色可以是任意的 RGB 组合。也就是说，对于一个图像 A，当它被一个遮罩 B 覆盖时，我们看到的图像 C 就是通过遮罩 B 看到的图像 A。因此，我们看到的实际上是图像 C 的 RGB 值。
 
-For processing the transparency of the image through the algorithm, it is actually on the original image through the algorithm Cover with a layer of colored mask. The color of the mask can be any combination of RGB.That is to say, for an image A, it is covered with a mask B, what we can seeThe image C is the image A seen through the mask B.So what we actually see is the RGB value of image C.
+所以我们要做的就是计算图像 C 的 RGB 值。
 
-So what we have to do is to calculate the RGB value of image C.
+透明度混合算法：
 
-#### 1.So transparency blending algorithm:
-
-`A(C) = (1-alpha)*A(B) + alpha*A(A)` 
-
-`R(C) = (1-alpha)*R(B) + alpha*R(A)`  
-`G(C) = (1-alpha)*G(B) + alpha*G(A)`  
-`B(C) = (1-alpha)*B(B) + alpha*B(A)`
- 
-#### [[You can also refer to](https://www.cnblogs.com/kongqiweiliang/p/3773127.html)]  
-
-#### 2.Algorithm effect:  
-_original image1_  
-<img src="https://s1.ax1x.com/2020/05/10/Y3PShR.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
-_original image2_  
-<img src="https://s1.ax1x.com/2020/05/10/Y3mHIK.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
-_original image1 monochrome mixing_  
-<img src="https://s1.ax1x.com/2020/05/10/Y3n7Os.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
-_original image1 and image2 mixing_  
-<img src="https://s1.ax1x.com/2020/05/10/Y3ui01.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
-
-:+1:The effect looks good!
-
-## _Ⅱ. Binarizations_
-
-Image binarization, as the name implies, is to convert the RGB color values of the image to 0 or 1, that is, an image is only composed of 0 and 1, in the field of electronic technology, 0 represents closed 1 represents open, for pixels 0 represents no display 1 stands for display, so the image after a binarization operation consists of only black and white. This is widely used in machine vision, because for computers, they can only process 0-1 data, and do not need to know what color the image is. They only need to know the outline of the image, so they know 0 and 1 are enough.
-
-Before performing the binarization operation, we have to perform another operation, that is, to convert the image to a grayscale image. Why is such an operation required?
-Here I will talk about the dimension of the image. For a photo, it is composed of a series of pixels, so when we want to control a certain pixel, we can communicate index through rows and columns, such as [x, y], but just x and y are not enough, why? Because x and y only describe where this pixel is Ah, it does not describe what color this pixel is. So we also need to introduce a z, use z to specify the color value, and use the color value to describe what the pixel is. colored. so there is [x, y, z], indicating that the position of this pixel is [x, y] and the color is z. so describing a pixel that constitutes a color photo needs to three-dimensional data to represent.so for a color picture it is a three-dimensional data matrix.therefore, the picture is processed into gray, which can reduce the color dimension of the image.
-
-#### Gray filling algorithm:  
-
-`gray = 0.299 * r + 0.587 * g + 0.114 * b`  
-
->This is a psychological formula, but it can also be used to process the image into gray, which is interesting,
-r, g, b Indicates how many standard red, green, and blue pixels each make up of the original image pixels.
-
-_original image_  
-<img src="https://s1.ax1x.com/2020/05/10/Y3PShR.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
-_Look, this is how it looks_  
-<img src="https://s1.ax1x.com/2020/05/10/Y3YKGn.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
-
-After the image is processed into gray, there is no color, which means R = G = B = gray, so the color dimension of the color photo is also reduced, so this is also similar to a proportional mixing, mixing RGB values of color photos in a ratio of 0.299: 0.587: 0.114
-Ok, everything is very easy to handle. After the color is processed into gray, only the dark and light colors are left for the color of the image. At this time, we can set a threshold to assign pixels with a color depth greater than the threshold 255 makes it appear white, and assign a value of 0 where it is smaller than the threshold to make it appear black. The color value is either 0 or 255, which is very good. the original color image is only black and white in a blink of an eye.  
-
+```python
+A(C) = (1-alpha)*A(B) + alpha*A(A)
+R(C) = (1-alpha)*R(B) + alpha*R(A)
+G(C) = (1-alpha)*G(B) + alpha*G(A)
+B(C) = (1-alpha)*B(B) + alpha*B(A)
 ```
+
+你也可以参考： https://www.cnblogs.com/kongqiweiliang/p/3773127.html
+
+原始图像 1
+
+![image.png](./Docs/6874747073.jpg)
+
+原始图像 2
+
+![image.png](./Docs/68747470732.jpg)
+
+原始图像 1 和单色图像混合
+
+![image.png](./Docs/617831782e636.jpg)
+
+原始图像 1 和图像 2 混合
+
+![image.png](./Docs/733a2f2f733.jpg)
+
+## 2. 二值化
+
+图像二值化，顾名思义，就是将图像的RGB颜色值转换为0或1，也就是说，图像仅由0和1组成。在电子技术领域，0表示关闭，1表示开启；对于像素，0表示不显示，1表示显示。因此，经过二值化操作后的图像仅由黑白组成。这在机器视觉中被广泛使用，因为对于计算机来说，它们只能处理0-1数据，并不需要知道图像的颜色，它们只需要知道图像的轮廓，因此知道0和1就足够了。
+
+在执行二值化操作之前，我们必须先进行另一个操作，也就是将图像转换为灰度图。为什么需要这样的操作？
+
+这里我将谈到图像的维度。对于一张照片，它是由一系列像素组成的，因此当我们想要控制某个像素时，可以通过行和列传达索引，例如 [x, y]，但仅有x和y是不够的，为什么？因为x和y只是描述了这个像素的位置，而没有描述该像素的颜色。因此我们还需要引入一个z，用z来指定颜色值，并用颜色值描述像素的颜色。所以有了 [x, y, z]，表示该像素的位置是 [x, y]，颜色是z。因此，描述构成彩色照片的一个像素需要使用三维数据来表示。所以对于彩色图片，它是一个三维数据矩阵。因此，将图片处理成灰度可以减少图像的颜色维度。
+
+灰度填充算法：
+
+```python
+gray = 0.299 * r + 0.587 * g + 0.114 * b
+```
+
+> 这是一个心理学公式，但它也可以用来将图像处理为灰度，这很有趣，r、g、b 表示原始图像像素中标准红、绿、蓝像素的占比。
+
+原始图像
+
+![image.png](./Docs/6f6d2f32303.jpg)
+
+处理后图像
+
+![image.png](./Docs/3a2f2f73312.jpg)
+
+图像处理为灰度后，没有颜色，也就是说 R = G = B = gray，因此彩色照片的颜色维度也被降低，这也类似于按比例混合，将彩色照片的 RGB 值按 0.299:0.587:0.114 的比例混合。
+
+好了，一切都很容易处理。颜色处理为灰度后，图像的颜色只剩下深浅，这时我们可以设置一个阈值，将大于阈值的像素值设为 255，使其呈现白色，小于阈值的像素值设为 0，使其呈现黑色。颜色值只有 0 或 255，这非常好。原本的彩色图像瞬间就变成了黑白图像。
+
+```python
 if imagematrix[i, j] > threshold:
     new[i, j] = 255
 else:
     new[i, j] = 0
 ```
 
-You think that's fine, I said earlier that in computer image recognition, the computer only knows 0 and 1, but now the data values in the image matrix are 0 and 255, so don't worry, we will put each data of the image The value is divided by 255, so that the value of the image matrix is processed into 0 and 1.
-_Okay, let's see the effect now_  
-<img src="https://s1.ax1x.com/2020/05/10/Y3dWK1.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />
+你觉得没问题，我之前说过，在计算机图像识别中，计算机只认识 0 和 1，但现在图像矩阵中的数值是 0 和 255，所以不用担心，我们会把图像的每个数据值除以 255，这样图像矩阵的值就会被处理成 0 和 1。
 
-## _Ⅲ. Gauassian bar_
+处理后图像
 
-Blur is widely used in UI special effects, such as iOS, Android, MIUI, Windows operating system. of course, blur also plays an important role in image filters, and Gaussian blur is the most widely used in blur algorithms. gaussian blur is mainly named after the mathematician Gaussian. Gaussian blur mainly uses Gaussian distribution [normal distribution] for image blur processing. let us carefully analyze the implementation process of Gaussian blur algorithm.  
+![image.png](./Docs/e617831782e.jpg)
 
-#### 1. Gaussian fuzzy principle:  
+## 3. 高斯模糊
 
-The so-called "blur" can be understood as the average value of surrounding pixels for each pixel.  
-<img src="https://s1.ax1x.com/2020/05/12/YUuH0S.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  <img src="https://s1.ax1x.com/2020/05/12/YUKG9A.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  
+模糊在 UI 特效中被广泛使用，例如 iOS、Android、MIUI、Windows 操作系统。当然，模糊在图像滤镜中也起着重要作用，而高斯模糊是模糊算法中最广泛使用的一种。高斯模糊主要以数学家高斯命名。高斯模糊主要利用高斯分布（正态分布）进行图像模糊处理。让我们仔细分析高斯模糊算法的实现过程。
 
-**This is the effect,  the average value of the surrounding points will be 1**
+所谓 “模糊”，可以理解为对每个像素点周围像素的平均值。
 
-When calculating the average value, the larger the range of surrounding pixels, the stronger the blur effect
+![image.png](./Docs/2e617831782e63.jpg)
 
-<img src="https://s1.ax1x.com/2020/05/12/YUQAQ1.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  <img src="https://s1.ax1x.com/2020/05/12/YUQmdO.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  <img src="https://s1.ax1x.com/2020/05/12/YUQQWd.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  
+![image.png](./Docs/617831782e636f.jpg)
 
-#### 2. Normally distributed weights:
+这就是效果，周围点的平均值将为 1
 
-###### _2.1 one dimensional normal distribution_
+在计算平均值时，周围像素范围越大，模糊效果越强
 
-<img src="https://s1.ax1x.com/2020/05/12/YU1lrt.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
-For the value through the relationship, the normal distribution is obviously a desirable weight distribution mode. on the graph, the normal distribution is a bell-shaped curve, the closer to the center, the larger the value, the farther from the center, the smaller the value.  
-When calculating the average value, we only need to use the "center point" as the origin, and assign weights to other points according to their positions on the normal curve, and we can get a weighted average.
+![image.png](./Docs/20251121105933.jpg)
 
-For the above normal distribution image is one-dimensional, but for an image, it is a plane with rows and columns, so we need a two-dimensional normal distribution image
+一维正态分布的权重
 
-###### _2.2 two dimensional normal distribution_
+![image.png](./Docs/3312e617831782.jpg)
 
-<img src="https://s1.ax1x.com/2020/05/12/YUtiKH.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />  
+根据数值之间的关系，正态分布显然是一种理想的权重分布方式。在图上，正态分布呈钟形曲线，越靠近中心，数值越大；离中心越远，数值越小。
+在计算平均值时，我们只需要以“中心点”为原点，根据其他点在正态曲线上的位置赋予权重，就可以得到加权平均值。
 
-#### 3. Gaussian function:
+上图中的正态分布是一维的，但对于一张图像，它是有行列的平面，因此我们需要二维正态分布图像
 
-###### _3.1 One-dimensional Gaussian function_    
+一维正态分布的权重
 
-<img src="https://s1.ax1x.com/2020/05/13/YawtyT.jpg" alt="GitHub" title="GitHub,Social Coding" width="300" height="60" /> 
-Where μ is the mean of x and σ is the variance of x. Since the center point is the origin when calculating the average value, μ is equal to 0.  
-So the following formula:   
-<img src="https://s1.ax1x.com/2020/05/13/Ya0huT.jpg" alt="GitHub" title="GitHub,Social Coding" width="300" height="60" />  
+![image.png](./Docs/831782e636f6d2.jpg)
 
-###### _3.2 Two-dimensional Gaussian function_
+### 3.1 高斯函数
 
-According to the one-dimensional Gaussian function, the two-dimensional Gaussian function can be derived
-<img src="https://s1.ax1x.com/2020/05/13/YaBrM6.jpg" alt="GitHub" title="GitHub,Social Coding" width="300" height="60" /> 
-Well, with this two-dimensional Gaussian function we can proceed to the next operation
+一维高斯函数
 
-#### 4. Weight matrix:
+![image.png](./Docs/30352f31332f59.jpg)
 
-Assuming the coordinates of the center point are [0, 0], then the coordinates of the 8 points closest to it are as follows:   
-<img src="https://s1.ax1x.com/2020/05/13/Ydrx0K.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  
+其中 μ 是 x 的均值，σ 是 x 的方差。由于在计算平均值时中心点为原点，因此 μ 等于 0。
+所以公式如下：
 
-Now we need to calculate the weight matrix. In order to calculate the weight matrix, we need to set the value of σ. Assuming σ = 1.5, the weight matrix with a blur radius of 1 is as follows:   
-<img src="https://s1.ax1x.com/2020/05/13/YdyOZ6.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  
+![image.png](./Docs/61306875542e6a.jpg)
 
-The sum of the weights of these 9 points is equal to 0.4787147. If only the weighted average of these 9 points is calculated, the sum of their weights must be equal to 1. Therefore, the above 9 values must be divided by 0.4787147 to obtain the final weight matrix.   
-<img src="https://s1.ax1x.com/2020/05/13/Yd6PsI.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />  
+3.2 二维高斯函数
 
-#### 5. Calculate Gaussian Blur:  
+根据一维高斯函数，可以推导出二维高斯函数：
 
-The weight matrix is calculated, now we can calculate the Gaussian fuzzy value we need.  
-If we now have 9 pixels, the value range is 0 to 255, and their values are as shown in the figure below.
-<img src="https://s1.ax1x.com/2020/05/24/tSbIk6.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />    
-Now we multiply these pixels by their respective weight values, and their weight values are as follows.  
-<img src="https://s1.ax1x.com/2020/05/24/tSbv7t.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />    
-Then you get the value shown in the figure below.  
-<img src="https://s1.ax1x.com/2020/05/24/tSqAns.jpg" alt="GitHub" title="GitHub,Social Coding" width="200" height="162" />    
-Nine values are obtained here, and the calculated nine values are added together to obtain the color value of the center pixel. We repeat the above calculation and take values for all pixels of the image to obtain a Gaussian blurred image Too.    
+![image.png](./Docs/4d362e6a7067.jpg)
 
-_Okay, let ’s take a look at the effect_  
-_original image_    
-<img src="https://s1.ax1x.com/2020/05/24/tSL7sH.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" />   
-_After processing_    
-<img src="https://s1.ax1x.com/2020/05/24/tSL0iV.jpg" alt="GitHub" title="GitHub,Social Coding" width="600" height="338" /> 
+好了，有了这个二维高斯函数，我们可以进行下一步操作。
+
+### 3.2 权重矩阵
+
+假设中心点的坐标为 [0, 0]，则距离其最近的 8 个点的坐标如下：
+
+![image.png](./Docs/04b2e6a7067.jpg)
+
+现在我们需要计算权重矩阵。为了计算权重矩阵，我们需要设定 σ 的值。假设 σ = 1.5，则模糊半径为 1 的权重矩阵如下：
+
+![image.png](./Docs/5964794f5a362e.jpg)
+
+这 9 个点的权重和为 0.4787147。如果仅计算这 9 个点的加权平均值，则它们的权重和必须等于 1。因此，上述 9 个值需除以 0.4787147，得到最终的权重矩阵。
+
+![image.png](./Docs/5073492e6a7067.jpg)
+
+### 3.3 计算高斯模糊
+
+权重矩阵已计算完成，现在我们可以计算所需的高斯模糊值。
+如果现在有 9 个像素，它们的值范围是 0 到 255，其值如下图所示：
+
+![image.png](./Docs/02f3052f32342f7.jpg)
+
+现在我们将这些像素乘以各自的权重值，其权重值如下：
+
+![image.png](./Docs/3176f6d2weesg.jpg)
+
+然后得到下图所示的值。
+
+![image.png](./Docs/68745371416e73.jpg)
+
+这里得到 9 个值，将计算出的 9 个值相加即可得到中心像素的颜色值。我们重复上述计算，为图像的所有像素取值，就能得到高斯模糊图像。
+
+原始图像
+
+![image.png](./Docs/02ff32342f3482e.jpg)
+
+处理后图像
+
+![image.png](./Docs/69562e6a7067.jpg)
